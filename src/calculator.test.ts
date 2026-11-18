@@ -14,6 +14,7 @@ import {
   calculatePortalAnalytics,
   getAcademicStanding,
   formatTranscriptCsv,
+  parseTranscriptCsv,
 } from './calculator.js';
 
 test('GRADE_SCALE maps A=5 down to F=0', () => {
@@ -171,4 +172,59 @@ test('realignSessionsToEntryYear shifts session years consistently and validateC
   assert.equal(validateCourse({ code: 'cos 101', title: 'Intro', units: '3', grade: 'a' }).valid, true);
   assert.equal(validateCourse({ code: 'COS 101', title: 'Intro', units: '3.5', grade: 'A' }).valid, false);
   assert.equal(validateCourse({ code: 'COS 101', title: 'Intro', units: '', grade: 'A' }).valid, false);
+});
+
+test('parseTranscriptCsv round-trips both all-years and selected-session exported CSVs', () => {
+  const profile = {
+    name: 'Daniel Mbibe',
+    regNo: '2023/256558',
+    faculty: 'Faculty of Physical Sciences',
+    department: 'Computer Science',
+    course: 'B.Sc. Computer Science',
+    level: '200 Level',
+  };
+  const sessions = [
+    {
+      id: 's1',
+      academicYear: '2023/2024',
+      level: '100 Level',
+      semesterName: 'First Semester',
+      courses: [{ id: 'c1', code: 'COS 101', title: 'Introduction, Computing & Logic', units: 2, grade: 'A' }],
+    },
+    {
+      id: 's2',
+      academicYear: '2024/2025',
+      level: '200 Level',
+      semesterName: 'First Semester',
+      courses: [{ id: 'c2', code: 'COS 201', title: 'Computer Programming I', units: 3, grade: 'B' }],
+    },
+  ];
+  const analytics = calculatePortalAnalytics(sessions, 's2');
+
+  // Round-trip "all" scope
+  const csvAll = formatTranscriptCsv(profile, analytics, 'all');
+  const importedAll = parseTranscriptCsv(csvAll);
+  assert.equal(importedAll.ok, true);
+  assert.ok(importedAll.profile && importedAll.sessions);
+  assert.equal(importedAll.profile.name, 'Daniel Mbibe');
+  assert.equal(importedAll.profile.regNo, '2023/256558');
+  assert.equal(importedAll.profile.faculty, 'Faculty of Physical Sciences');
+  assert.equal(importedAll.profile.department, 'Computer Science');
+  assert.equal(importedAll.profile.entryYear, '2023');
+  assert.equal(importedAll.profile.currentSession, '2024/2025');
+  assert.equal(importedAll.sessions.length, 2);
+  assert.equal(importedAll.sessions[0].courses[0].title, 'Introduction, Computing & Logic');
+
+  // Round-trip "selected" scope
+  const csvSel = formatTranscriptCsv(profile, analytics, 'selected');
+  const importedSel = parseTranscriptCsv(csvSel);
+  assert.equal(importedSel.ok, true);
+  assert.ok(importedSel.profile && importedSel.sessions);
+  assert.equal(importedSel.profile.name, 'Daniel Mbibe');
+  assert.equal(importedSel.profile.entryYear, '2023');
+  assert.equal(importedSel.sessions.length, 1);
+  assert.equal(importedSel.sessions[0].courses[0].code, 'COS 201');
+
+  // Invalid CSV rejected cleanly
+  assert.equal(parseTranscriptCsv('foo,bar\n1,2').ok, false);
 });

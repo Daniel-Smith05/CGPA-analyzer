@@ -15,6 +15,7 @@ import {
   validateCourse,
   calculatePortalAnalytics,
   formatTranscriptCsv,
+  parseTranscriptCsv,
 } from './calculator.js';
 import { createBareState, loadPortalState, savePortalState } from './storage.js';
 import {
@@ -131,6 +132,8 @@ const els = {
   removeAvatarBtn: document.getElementById('remove-avatar-btn'),
   demoProfileSelect: document.getElementById('demo-profile-select'),
   loadDemoProfileBtn: document.getElementById('load-demo-profile-btn'),
+  importCsvInput: document.getElementById('import-csv-input'),
+  importCsvBtn: document.getElementById('import-csv-btn'),
   resetBareBtn: document.getElementById('reset-bare-btn'),
   profileForm: document.getElementById('student-profile-form'),
   profileFeedback: document.getElementById('profile-feedback'),
@@ -1456,6 +1459,50 @@ function bindEvents() {
       `Loaded demonstration profile: ${demo.profile.name} (${demo.profile.department}, ${demo.profile.level}). Click "Back to Dashboard" to inspect analytics.`,
       'success'
     );
+  });
+
+  // Import Profile & Sessions from previously exported CSV
+  els.importCsvBtn.addEventListener('click', () => {
+    els.importCsvInput.click();
+  });
+
+  els.importCsvInput.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const csvText = await file.text();
+      const imported = parseTranscriptCsv(csvText);
+      if (!imported.ok) {
+        showProfileFeedback(imported.error || 'Could not parse CSV file.', 'error');
+        return;
+      }
+
+      const currentAvatar = state.profile.avatarDataUrl || '';
+      state.profile = {
+        ...state.profile,
+        ...imported.profile,
+        avatarDataUrl: currentAvatar,
+      };
+      state.sessions = imported.sessions;
+      state.selectedSessionId =
+        imported.sessions.length > 0
+          ? imported.sessions[imported.sessions.length - 1].id
+          : null;
+      validationErrors.clear();
+      renderAll(true);
+
+      const totalCourses = imported.sessions.reduce((sum, s) => sum + s.courses.length, 0);
+      showProfileFeedback(
+        `Imported CSV profile${imported.profile.name ? ` for ${imported.profile.name}` : ''}: ${imported.sessions.length} ${
+          imported.sessions.length === 1 ? 'semester' : 'semesters'
+        } and ${totalCourses} ${totalCourses === 1 ? 'course' : 'courses'} restored.`,
+        'success'
+      );
+    } catch {
+      showProfileFeedback('Unable to read the selected CSV file.', 'error');
+    } finally {
+      els.importCsvInput.value = '';
+    }
   });
 
   els.resetBareBtn.addEventListener('click', () => {

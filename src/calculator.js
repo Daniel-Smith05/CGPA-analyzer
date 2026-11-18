@@ -494,3 +494,297 @@ export function formatTranscriptCsv(profile, analytics, scope = 'selected') {
 
   return lines.map((cols) => cols.map(escapeCsv).join(',')).join('\n');
 }
+
+/**
+ * Parses RFC-4180 CSV text into an array of string rows, handling quoted fields,
+ * escaped quotes (""), embedded commas, UTF-8 BOM, and CRLF/LF line endings.
+ * @param {string} csvText
+ * @returns {string[][]}
+ */
+export function parseCsvRows(csvText) {
+  const text = String(csvText ?? '').replace(/^\uFEFF/, '');
+  const rows = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      row.push(field.trim());
+      field = '';
+    } else if (ch === '\r' || ch === '\n') {
+      if (ch === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(field.trim());
+      rows.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += ch;
+    }
+  }
+
+  if (field.length > 0 || row.length > 0) {
+    row.push(field.trim());
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+/**
+ * Parses a transcript CSV previously exported by formatTranscriptCsv()
+ * back into student profile details and academic sessions/courses.
+ * Supports both "Selected Session" and "All Years Grouped" CSV exports.
+ * @param {string} csvText
+ * @returns {{
+ *   ok: boolean,
+ *   error?: string,
+ *   profile?: {
+ *     name: string,
+ *     regNo: string,
+ *     faculty: string,
+ *     department: string,
+ *     course: string,
+ *     entryYear: string,
+ *     level: string,
+ *     currentSession: string,
+ *     targetCgpa: number
+ *   },
+ *   sessions?: Array<{
+ *     id: string,
+ *     academicYear: string,
+ *     level: string,
+ *     semesterName: string,
+ *     courses: Array<{ id: string, code: string, title: string, units: number, grade: string }>
+ *   }>
+ * }}
+ */
+export function parseTranscriptCsv(csvText) {
+  const rows = parseCsvRows(csvText);
+  if (rows.length === 0) {
+    return { ok: false, error: 'The selected CSV file is empty.' };
+  }
+
+  const cleanValue = (val) => {
+    const str = String(val ?? '').trim();
+    return str === 'Not Set' ? '' : str;
+  };
+
+  const profile = {
+    name: '',
+    regNo: '',
+    faculty: '',
+    department: '',
+    course: '',
+    entryYear: '',
+    level: '100 Level',
+    currentSession: '',
+    targetCgpa: 4.5,
+  };
+
+  const sessions = [];
+  let activeYear = '';
+  let activeLevel = '';
+  let activeSession = null;
+  let inCourseTable = false;
+  let recognizedPortalHeader = false;
+  let courseCounter = 0;
+  let sessionCounter = 0;
+
+  const ensureSession = (academicYear, level, semesterName) => {
+    const cleanYear = String(academicYear || '').trim();
+    const cleanLevel = VALID_LEVELS.includes(level) ? level : '100 Level';
+    const cleanSemester = String(semesterName || '').trim() || 'First Semester';
+    if (!isValidAcademicYear(cleanYear)) return null;
+
+    const existing = sessions.find(
+      (s) =>
+        s.academicYear === cleanYear &&
+        s.semesterName.toLowerCase() === cleanSemester.toLowerCase()
+    );
+    if (existing) return existing;
+
+    sessionCounter += 1;
+    const created = {
+      id: `imp-sem-${Date.now().toString(36)}-${sessionCounter}`,
+      academicYear: cleanYear,
+      level: cleanLevel,
+      semesterName: cleanSemester,
+      courses: [],
+    };
+    sessions.push(created);
+    return created;
+  };
+
+  for (const cols of rows) {
+    if (cols.every((c) => !c)) {
+      inCourseTable = false;
+      continue;
+    }
+
+    const first = cols[0] || '';
+    const second = cols[1] || '';
+
+    // 1. Key-value student metadata lines
+    if (first === 'Student Name') {
+      recognizedPortalHeader = true;
+      profile.name = cleanValue(second);
+      continue;
+    }
+    if (first === 'Registration Number') {
+      recognizedPortalHeader = true;
+      profile.regNo = cleanValue(second);
+      continue;
+    }
+    if (first === 'Faculty') {
+      recognizedPortalHeader = true;
+      profile.faculty = cleanValue(second);
+      continue;
+    }
+    if (first === 'Department') {
+      recognizedPortalHeader = true;
+      profile.department = cleanValue(second);
+      continue;
+    }
+    if (first === 'Course / Programme') {
+      recognizedPortalHeader = true;
+      profile.course = cleanValue(second);
+      continue;
+    }
+    if (first === 'Current Level') {
+      recognizedPortalHeader = true;
+      const lvl = cleanValue(second);
+      if (VALID_LEVELS.includes(lvl)) profile.level = lvl;
+      continue;
+    }
+    if (first === 'Entry Year') {
+      const yr = cleanValue(second);
+      if (/^\d{4}$/.test(yr)) profile.entryYear = yr;
+      continue;
+    }
+
+    // 2. Scope = "selected" session metadata lines
+    if (first === 'Academic Year' && isValidAcademicYear(second)) {
+      recognizedPortalHeader = true;
+      activeYear = second;
+      continue;
+    }
+    if (first === 'Level' && VALID_LEVELS.includes(second)) {
+      activeLevel = second;
+      continue;
+    }
+    if (first === 'Semester' && second) {
+      activeSession = ensureSession(activeYear, activeLevel || profile.level, second);
+      continue;
+    }
+
+    // 3. Scope = "all" year & semester group header lines
+    if (first.startsWith('Academic Year:')) {
+      recognizedPortalHeader = true;
+      activeYear = first.replace(/^Academic Year:\s*/i, '').trim();
+      const lvlCol = cols.find((c) => /^Level:\s*/i.test(c));
+      if (lvlCol) {
+        const parsedLvl = lvlCol.replace(/^Level:\s*/i, '').trim();
+        if (VALID_LEVELS.includes(parsedLvl)) activeLevel = parsedLvl;
+      }
+      inCourseTable = false;
+      continue;
+    }
+    if (first.startsWith('Semester:')) {
+      recognizedPortalHeader = true;
+      const semName = first.replace(/^Semester:\s*/i, '').trim();
+      activeSession = ensureSession(activeYear, activeLevel || profile.level, semName);
+      inCourseTable = false;
+      continue;
+    }
+
+    // 4. Course table header
+    if (first === 'Course Code' && second === 'Course Title') {
+      recognizedPortalHeader = true;
+      inCourseTable = true;
+      continue;
+    }
+
+    // 5. Subtotal / summary rows end course table
+    if (
+      first.endsWith('Subtotal') ||
+      first.startsWith('Selected Session') ||
+      first.startsWith('Cumulative ') ||
+      first === 'Academic Standing'
+    ) {
+      inCourseTable = false;
+      continue;
+    }
+
+    // 6. Course rows
+    if (inCourseTable && activeSession && cols.length >= 4) {
+      const code = String(cols[0] || '').trim().toUpperCase();
+      const title = String(cols[1] || '').trim();
+      const units = Number.parseInt(String(cols[2] || ''), 10);
+      const grade = String(cols[3] || '').trim().toUpperCase();
+      const candidate = { code, title, units, grade };
+      if (validateCourse(candidate).valid) {
+        courseCounter += 1;
+        activeSession.courses.push({
+          id: `imp-crs-${Date.now().toString(36)}-${courseCounter}`,
+          ...candidate,
+        });
+      }
+    }
+  }
+
+  if (!recognizedPortalHeader) {
+    return {
+      ok: false,
+      error: 'Unrecognized CSV format. Please select a transcript CSV exported from this portal.',
+    };
+  }
+
+  // Infer Entry Year deterministically from imported sessions or fallback
+  if (!profile.entryYear) {
+    if (sessions.length > 0) {
+      const firstSession = [...sessions].sort((a, b) =>
+        a.academicYear.localeCompare(b.academicYear)
+      )[0];
+      const startYear = Number.parseInt(firstSession.academicYear.split('/')[0], 10);
+      const levelIdx = VALID_LEVELS.indexOf(firstSession.level);
+      if (Number.isInteger(startYear) && levelIdx >= 0) {
+        profile.entryYear = String(startYear - levelIdx);
+      }
+    } else if (/^\d{4}\/\d{6}$/.test(profile.regNo)) {
+      profile.entryYear = profile.regNo.slice(0, 4);
+    } else {
+      profile.entryYear = '2024';
+    }
+  }
+
+  // Align currentSession with entryYear + level
+  profile.currentSession =
+    deriveAcademicYearFromLevel(profile.entryYear, profile.level) ||
+    formatConsecutiveAcademicYear(profile.entryYear);
+
+  return {
+    ok: true,
+    profile,
+    sessions,
+  };
+}
+

@@ -411,9 +411,9 @@ export function getCourseCatalogForStudent(departmentName, facultyName = '') {
  */
 export const DEMO_PROFILES = Object.freeze({
   unn_csc_300: {
-    label: 'UNN Computer Science · 300 Level (3 Years)',
+    label: 'Daniel Mbibe — UNN Computer Science · 300 Level (3 Years)',
     profile: {
-      name: 'Chinedu Okafor',
+      name: 'Daniel Mbibe',
       regNo: '2023/256558',
       faculty: 'Faculty of Physical Sciences',
       department: 'Computer Science',
