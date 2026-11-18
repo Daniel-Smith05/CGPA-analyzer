@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Result &amp; CGPA Analytics Portal</title>
+    <meta
+      name="description"
+      content="Single-page academic result management, 5.0-scale GPA & CGPA calculator, Chart.js performance analytics, and printable transcript preview portal."
+    />
+    <meta property="og:title" content="Student Result &amp; CGPA Analytics Portal" />
+    <meta
+      property="og:description"
+      content="Interactive 5.0-scale GPA & CGPA calculator, grade analytics charts, and printable academic transcript portal."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Google Fonts: Plus Jakarta Sans (Display), DM Sans (Body), JetBrains Mono (Tabular Data) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+              sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            },
+            colors: {
+              gold: {
+                50: '#fefce8',
+                100: '#fef9c3',
+                200: '#fef08a',
+                300: '#fde047',
+                400: '#facc15',
+                500: '#eab308',
+                600: '#ca8a04',
+                700: '#a16207',
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Custom Portal Stylesheet -->
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased selection:bg-gold-400 selection:text-slate-950">
+    <!-- Mobile Sidebar Backdrop -->
+    <div
+      id="sidebar-backdrop"
+      class="fixed inset-0 z-30 bg-slate-950/60 backdrop-blur-xs hidden lg:hidden"
+      aria-hidden="true"
+    ></div>
+
+    <!-- Fixed Sidebar Navigation -->
+    <aside
+      id="portal-sidebar"
+      aria-label="Portal Navigation"
+      class="no-print fixed inset-y-0 left-0 z-40 w-64 bg-slate-950 text-slate-100 border-r border-slate-800/90 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out"
+    >
+      <div>
+        <!-- Brand Header with Uploaded Gold CGPA Logo -->
+        <div class="h-16 px-5 flex items-center justify-between border-b border-slate-800/90">
+          <a
+            href="#dashboard"
+            data-nav-target="dashboard"
+            class="sidebar-brand-link flex items-center gap-3 whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 rounded-md"
+          >
+            <img
+              src="/assets/aistudio/image_2dd025a5.png"
+              alt="CGPA Portal Logo"
+              referrerpolicy="no-referrer"
+              class="w-9 h-9 rounded-lg object-cover shrink-0 border border-gold-400/40"
+            />
+            <span class="font-display text-base font-bold tracking-tight text-white">CGPA Portal</span>
+          </a>
+          <button
+            id="close-sidebar-btn"
+            type="button"
+            aria-label="Close navigation menu"
+            class="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Primary Navigation Links -->
+        <nav class="px-3 py-6 space-y-1.5" aria-label="Primary Sections">
+          <a
+            href="#dashboard"
+            data-nav-target="dashboard"
+            class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-gold-400/15 text-gold-300"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+
+          <a
+            href="#calculator"
+            data-nav-target="calculator"
+            class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-slate-300 hover:text-white hover:bg-slate-800/70"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span>Grade Calculator</span>
+          </a>
+
+          <a
+            href="#analytics"
+            data-nav-target="analytics"
+            class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-slate-300 hover:text-white hover:bg-slate-800/70"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>Analytics</span>
+          </a>
+
+          <a
+            href="#transcript"
+            data-nav-target="transcript"
+            class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-slate-300 hover:text-white hover:bg-slate-800/70"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Transcript Preview</span>
+          </a>
+
+          <a
+            href="#profile"
+            data-nav-target="profile"
+            class="sidebar-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-slate-300 hover:text-white hover:bg-slate-800/70"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>Student Profile</span>
+          </a>
+        </nav>
+      </div>
+
+      <!-- Student Context Footer with Avatar Icon -->
+      <div class="p-4 border-t border-slate-800/90">
+        <button
+          id="sidebar-profile-trigger"
+          type="button"
+          aria-label="Open student profile page"
+          class="w-full flex items-center gap-3 p-2 rounded-xl text-left hover:bg-slate-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+        >
+          <span
+            class="w-10 h-10 rounded-full bg-gold-400 text-slate-950 flex items-center justify-center shrink-0 font-display font-bold text-sm overflow-hidden border border-gold-300/60"
+            aria-hidden="true"
+          >
+            <img
+              id="sidebar-avatar-img"
+              src=""
+              alt=""
+              class="hidden w-full h-full object-cover"
+            />
+            <svg id="sidebar-avatar-fallback" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </span>
+          <span class="min-w-0 flex-1">
+            <span id="sidebar-student-name" class="block font-display font-semibold text-sm text-white truncate">Student Profile</span>
+            <span id="sidebar-student-regno" class="block font-mono text-xs text-gold-300 truncate">Not set</span>
+            <span id="sidebar-student-program" class="block text-xs text-slate-400 truncate">Configure UNN profile</span>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Shell -->
+    <div class="lg:pl-64 min-h-screen flex flex-col">
+      <!-- Top Header Bar -->
+      <header class="no-print sticky top-0 z-20 h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <button
+            id="open-sidebar-btn"
+            type="button"
+            aria-label="Open navigation menu"
+            class="lg:hidden p-2 -ml-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div class="min-w-0">
+            <h1 class="font-display text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">
+              Student Result &amp; CGPA Analytics Portal
+            </h1>
+            <p id="header-session-label" class="hidden sm:block text-xs text-slate-500 dark:text-slate-400 truncate">
+              No active session · Add a semester or load a demo profile
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            id="theme-toggle-btn"
+            type="button"
+            aria-label="Switch to dark theme"
+            aria-pressed="false"
+            class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-nowrap shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+          >
+            <svg id="theme-icon-moon" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <svg id="theme-icon-sun" class="w-4 h-4 shrink-0 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <span id="theme-toggle-label" class="hidden sm:inline">Dark Mode</span>
+          </button>
+
+          <button
+            id="header-print-btn"
+            type="button"
+            class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 whitespace-nowrap shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+          >
+            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            <span class="hidden sm:inline">Print / Export Preview</span>
+            <span class="sm:hidden">Preview</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Dashboard View -->
+      <main id="portal-main-view" class="flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-12 max-w-7xl w-full mx-auto">
+        <!-- Section 1: Dashboard Summary Metric Cards -->
+        <section id="dashboard" aria-labelledby="dashboard-heading" class="no-print scroll-mt-24">
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+            <div>
+              <h2 id="dashboard-heading" class="font-display text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Academic Overview
+              </h2>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Credit load, selected session GPA, multi-year cumulative CGPA, and academic standing on a 5.00 scale.
+              </p>
+            </div>
+            <p id="last-saved-label" class="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+              Saved locally in browser
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+            <!-- Card 1: Total Units Registered -->
+            <article class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Units Registered</p>
+              <div class="mt-2.5 flex items-baseline gap-2">
+                <span id="metric-total-units" class="font-mono text-3xl font-bold tabular-nums text-slate-900 dark:text-white">0</span>
+                <span class="text-sm font-medium text-slate-500 dark:text-slate-400">Units</span>
+              </div>
+              <p id="metric-cumulative-units" class="mt-3 text-xs text-slate-600 dark:text-slate-400 font-mono tabular-nums">
+                0 cumulative units total
+              </p>
+            </article>
+
+            <!-- Card 2: Selected Session GPA -->
+            <article class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+              <p id="metric-gpa-title" class="text-xs font-medium text-slate-500 dark:text-slate-400">Current Semester GPA</p>
+              <div class="mt-2.5 flex items-baseline gap-2">
+                <span id="metric-semester-gpa" class="font-mono text-3xl font-bold tabular-nums text-gold-600 dark:text-gold-400">0.00</span>
+                <span class="text-xs font-mono text-slate-500 dark:text-slate-400">/ 5.00</span>
+              </div>
+              <p id="metric-semester-points" class="mt-3 text-xs text-slate-600 dark:text-slate-400 font-mono tabular-nums">
+                0 / 0 quality points
+              </p>
+            </article>
+
+            <!-- Card 3: Cumulative CGPA -->
+            <article class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Cumulative CGPA</p>
+              <div class="mt-2.5 flex items-baseline gap-2">
+                <span id="metric-cumulative-cgpa" class="font-mono text-3xl font-bold tabular-nums text-slate-900 dark:text-white">0.00</span>
+                <span class="text-xs font-mono text-slate-500 dark:text-slate-400">/ 5.00</span>
+              </div>
+              <p id="metric-semesters-count" class="mt-3 text-xs text-slate-600 dark:text-slate-400 font-mono tabular-nums">
+                0 semesters evaluated
+              </p>
+            </article>
+
+            <!-- Card 4: Academic Standing -->
+            <article class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
+              <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Academic Standing</p>
+              <div class="mt-2.5">
+                <span id="metric-standing-label" class="font-display text-lg sm:text-xl font-bold text-slate-600 dark:text-slate-400 block leading-snug">
+                  Not Evaluated
+                </span>
+              </div>
+              <p id="metric-standing-detail" class="mt-3 text-xs text-slate-600 dark:text-slate-400">
+                Add courses to evaluate standing
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Section 2: Interactive Grade & Session Calculator -->
+        <section id="calculator" aria-labelledby="calculator-heading" class="no-print scroll-mt-24 space-y-8">
+          <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-4">
+            <div class="min-w-0 max-w-2xl">
+              <h2 id="calculator-heading" class="font-display text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Interactive Grade &amp; Session Calculator
+              </h2>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Sessions are grouped separately by academic year. Select any semester below or from the dropdown to add, edit, or remove its courses.
+              </p>
+            </div>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+              <button
+                id="toggle-add-session-btn"
+                type="button"
+                aria-expanded="false"
+                class="px-3.5 py-2 rounded-lg text-xs font-semibold border border-gold-400/70 bg-gold-50 dark:bg-gold-500/10 text-gold-700 dark:text-gold-300 hover:bg-gold-100 dark:hover:bg-gold-500/20 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                + Add Semester
+              </button>
+              <button
+                id="go-to-profile-demo-btn"
+                type="button"
+                class="px-3.5 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                Profile &amp; Demo Data
+              </button>
+            </div>
+          </div>
+
+          <!-- Inline Add Academic Semester Form (Consecutive Year & Single-Level Enforced) -->
+          <form
+            id="add-session-form"
+            class="hidden bg-white dark:bg-slate-900 border border-gold-300 dark:border-gold-500/40 rounded-xl p-5 sm:p-6 space-y-4"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <h3 class="font-display text-sm font-bold text-slate-900 dark:text-white">
+                  Add Academic Semester / Session
+                </h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Academic years follow consecutive YYYY/(YYYY+1) order and map 1-to-1 with your academic level from Entry Year.
+                </p>
+              </div>
+              <button
+                id="cancel-add-session-btn"
+                type="button"
+                class="text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white shrink-0"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <div id="add-session-error" class="hidden px-4 py-2.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-xs font-medium text-rose-800 dark:text-rose-300" role="alert"></div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label for="new-session-year" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Academic Year (Consecutive)</label>
+                <select
+                  id="new-session-year"
+                  class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                ></select>
+              </div>
+
+              <div>
+                <label for="new-session-level" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Level (Synced to Year)</label>
+                <select
+                  id="new-session-level"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                >
+                  <option value="100 Level">100 Level</option>
+                  <option value="200 Level">200 Level</option>
+                  <option value="300 Level">300 Level</option>
+                  <option value="400 Level">400 Level</option>
+                  <option value="500 Level">500 Level</option>
+                  <option value="600 Level">600 Level</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="new-session-semester" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Semester</label>
+                <select
+                  id="new-session-semester"
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                >
+                  <option value="First Semester">First Semester</option>
+                  <option value="Second Semester">Second Semester</option>
+                </select>
+              </div>
+
+              <div class="flex items-end">
+                <button
+                  type="submit"
+                  class="w-full px-4 py-2 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                >
+                  Create &amp; Select Session
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <!-- Academic Years Grouped Separately -->
+          <div id="years-grouped-container" class="space-y-4" data-testid="years-grouped"></div>
+
+          <!-- Selected Session Course Editor Card -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+            <!-- Editor Header with Session Selector Dropdown -->
+            <div class="px-5 sm:px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+                <label for="session-selector" class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                  Selected Session
+                </label>
+                <select
+                  id="session-selector"
+                  class="px-3.5 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                ></select>
+              </div>
+
+              <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+                <button
+                  id="clear-courses-btn"
+                  type="button"
+                  class="px-3.5 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+                >
+                  Clear Courses
+                </button>
+                <button
+                  id="add-course-btn"
+                  type="button"
+                  class="px-3.5 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                >
+                  + Add Course
+                </button>
+                <button
+                  id="calculate-gpa-btn"
+                  type="button"
+                  class="px-4 py-2 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+                >
+                  Calculate GPA
+                </button>
+              </div>
+            </div>
+
+            <!-- Status / Validation Banner -->
+            <div id="calculator-feedback" class="hidden px-5 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 text-sm" role="status" aria-live="polite"></div>
+
+            <!-- Quick-Add UNN Course Catalog Picker -->
+            <div id="unn-quick-add-bar" class="px-5 sm:px-6 py-4 bg-slate-50/70 dark:bg-slate-800/30 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1 min-w-0">
+                <label for="unn-course-catalog-select" class="text-xs font-semibold text-slate-600 dark:text-slate-300 whitespace-nowrap shrink-0">
+                  UNN Course Catalog
+                </label>
+                <select
+                  id="unn-course-catalog-select"
+                  class="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+                ></select>
+              </div>
+              <button
+                id="quick-add-unn-course-btn"
+                type="button"
+                class="px-4 py-2 rounded-lg text-xs font-semibold border border-gold-400/80 bg-gold-50 dark:bg-gold-500/15 text-gold-800 dark:text-gold-300 hover:bg-gold-100 dark:hover:bg-gold-500/25 whitespace-nowrap shrink-0 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                + Quick-Add Selected Course
+              </button>
+            </div>
+
+            <!-- Course Form -->
+            <form id="course-calculator-form" novalidate class="p-5 sm:p-6 space-y-5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <p id="editing-session-summary" class="text-xs font-medium text-slate-600 dark:text-slate-400">
+                  No session selected
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                  Formula: Σ(Credit Units × Grade Points) / Total Credit Units
+                </p>
+              </div>
+
+              <!-- Column Headings (Desktop) -->
+              <div id="course-table-headings" class="hidden md:grid md:grid-cols-12 gap-3 px-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <div class="col-span-2">Course Code</div>
+                <div class="col-span-4">Course Title</div>
+                <div class="col-span-2">Credit Units (1–6)</div>
+                <div class="col-span-2">Grade (0–5)</div>
+                <div class="col-span-1 text-right">Points</div>
+                <div class="col-span-1 text-right">Action</div>
+              </div>
+
+              <!-- Dynamic Course Rows -->
+              <div id="course-rows-container" class="space-y-3" data-testid="course-rows"></div>
+
+              <!-- Empty Courses / No Session State -->
+              <div id="courses-empty-state" class="hidden py-10 px-4 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                <p id="empty-state-title" class="font-display text-base font-semibold text-slate-900 dark:text-white">No courses recorded for this session</p>
+                <p id="empty-state-subtitle" class="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
+                  Use the UNN Course Catalog picker above or add a blank course row to compute GPA.
+                </p>
+                <div class="mt-4 flex items-center justify-center gap-3">
+                  <button
+                    id="empty-add-course-btn"
+                    type="button"
+                    class="px-4 py-2 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 transition-colors"
+                  >
+                    Add First Course
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Section 3: Analytics & Visualizations (Chart.js) -->
+        <section id="analytics" aria-labelledby="analytics-heading" class="no-print scroll-mt-24 space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <div>
+              <h2 id="analytics-heading" class="font-display text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                Performance Analytics
+              </h2>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Grade frequency breakdown for the selected session and longitudinal GPA trajectory across all academic years.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <!-- Grade Distribution Chart -->
+            <article class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col">
+              <div class="flex items-center justify-between gap-3 mb-5">
+                <div>
+                  <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Grade Distribution</h3>
+                  <p id="grade-chart-subtitle" class="text-xs text-slate-500 dark:text-slate-400">Count of A–F grades in selected session</p>
+                </div>
+                <div class="inline-flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800" role="group" aria-label="Grade chart type">
+                  <button
+                    id="chart-type-bar"
+                    type="button"
+                    data-chart-type="bar"
+                    aria-pressed="true"
+                    class="px-2.5 py-1 text-xs font-medium rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs transition-colors"
+                  >
+                    Bar
+                  </button>
+                  <button
+                    id="chart-type-pie"
+                    type="button"
+                    data-chart-type="pie"
+                    aria-pressed="false"
+                    class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  >
+                    Pie
+                  </button>
+                </div>
+              </div>
+
+              <div class="relative h-64 w-full">
+                <canvas id="grade-distribution-chart" data-testid="grade-chart" aria-label="Grade Distribution Chart" role="img"></canvas>
+                <div id="grade-chart-empty" class="hidden absolute inset-0 flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                  Add valid courses to visualize grade distribution.
+                </div>
+              </div>
+
+              <div id="grade-counts-summary" class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 grid grid-cols-6 gap-2 text-center font-mono text-xs tabular-nums"></div>
+            </article>
+
+            <!-- Semester Performance Trend Chart -->
+            <article class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col">
+              <div class="flex items-center justify-between gap-3 mb-5">
+                <div>
+                  <h3 class="font-display text-base font-bold text-slate-900 dark:text-white">Semester Performance Trend</h3>
+                  <p class="text-xs text-slate-500 dark:text-slate-400">GPA progression across semesters (0.00 – 5.00 scale)</p>
+                </div>
+                <span id="trend-delta-text" class="text-xs font-mono tabular-nums text-slate-600 dark:text-slate-400"></span>
+              </div>
+
+              <div class="relative h-64 w-full">
+                <canvas id="semester-trend-chart" data-testid="trend-chart" aria-label="Semester Performance Trend Chart" role="img"></canvas>
+                <div id="trend-chart-empty" class="hidden absolute inset-0 flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+                  Add semester data to view GPA trend.
+                </div>
+              </div>
+
+              <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span>First Class benchmark: <strong class="font-mono text-slate-700 dark:text-slate-200">4.50</strong></span>
+                <span>Target CGPA Goal: <strong id="analytics-target-cgpa" class="font-mono text-gold-600 dark:text-gold-400">4.50</strong></span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Section 4: Transcript Preview Table -->
+        <section id="transcript" aria-labelledby="transcript-heading" class="scroll-mt-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+          <!-- Transcript Actions Header -->
+          <div class="no-print px-5 sm:px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div class="min-w-0 max-w-xl">
+              <h2 id="transcript-heading" class="font-display text-lg font-bold text-slate-900 dark:text-white">
+                Transcript Preview
+              </h2>
+              <p class="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+                Formal academic statement summarizing course units, grades, points earned, and multi-year CGPA standing.
+              </p>
+            </div>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+              <div class="inline-flex items-center p-1 rounded-lg bg-slate-100 dark:bg-slate-800" role="group" aria-label="Transcript scope">
+                <button
+                  id="transcript-scope-selected"
+                  type="button"
+                  aria-pressed="true"
+                  class="px-2.5 py-1 text-xs font-medium rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs transition-colors whitespace-nowrap"
+                >
+                  Selected Session
+                </button>
+                <button
+                  id="transcript-scope-all"
+                  type="button"
+                  aria-pressed="false"
+                  class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors whitespace-nowrap"
+                >
+                  All Years Grouped
+                </button>
+              </div>
+              <button
+                id="export-csv-btn"
+                type="button"
+                class="px-3.5 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                Export CSV
+              </button>
+              <button
+                id="transcript-print-btn"
+                type="button"
+                class="px-4 py-2 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                Print / Export Preview
+              </button>
+            </div>
+          </div>
+
+          <!-- Printable Academic Transcript Sheet -->
+          <div id="printable-transcript-area" class="p-6 sm:p-7 space-y-6">
+            <!-- Transcript Document Header -->
+            <div class="pb-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div>
+                <p class="text-xs font-semibold text-gold-600 dark:text-gold-400">Unofficial Academic Statement of Result</p>
+                <h3 id="transcript-student-name" class="font-display text-lg font-bold text-slate-900 dark:text-white mt-0.5">Student Name Not Set</h3>
+                <p id="transcript-student-meta" class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                  Reg No: Not Set · Department Not Set · Faculty Not Set
+                </p>
+              </div>
+              <div class="text-left sm:text-right text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                <p>Programme: <span id="transcript-course" class="font-medium text-slate-900 dark:text-white">Not Set</span></p>
+                <p>Scope: <span id="transcript-scope-label" class="font-medium text-slate-900 dark:text-white">No session selected</span></p>
+                <p>Generated: <span id="transcript-date" class="font-mono tabular-nums"></span></p>
+              </div>
+            </div>
+
+            <!-- Transcript Content Container (Selected Table or All Years Grouped) -->
+            <div id="transcript-body-container" class="overflow-x-auto"></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Dedicated Student Profile Page View -->
+      <section id="profile-page-view" aria-labelledby="profile-page-heading" class="hidden flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 max-w-5xl w-full mx-auto">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 id="profile-page-heading" class="font-display text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Student Profile &amp; Academic Configuration
+            </h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              Customize your student identity, registration number, faculty, department, course year, and CGPA goal for personalized analytics and transcripts.
+            </p>
+          </div>
+          <button
+            id="back-to-dashboard-btn"
+            type="button"
+            class="px-4 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 whitespace-nowrap self-start sm:self-auto transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+
+        <!-- Profile Summary Banner Card with Avatar Upload -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="flex items-center gap-4 min-w-0">
+            <span
+              class="w-16 h-16 rounded-full bg-gold-400 text-slate-950 flex items-center justify-center shrink-0 overflow-hidden border-2 border-gold-300"
+              aria-hidden="true"
+            >
+              <img
+                id="profile-avatar-img"
+                src=""
+                alt=""
+                class="hidden w-full h-full object-cover"
+              />
+              <svg id="profile-avatar-fallback" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </span>
+            <div class="min-w-0">
+              <h3 id="profile-card-name" class="font-display text-lg font-bold text-slate-900 dark:text-white truncate">Student Name Not Set</h3>
+              <p id="profile-card-meta" class="text-sm text-slate-600 dark:text-slate-400 truncate">
+                Reg No: Not Set · Programme Not Set
+              </p>
+              <p id="profile-card-faculty" class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                Select your UNN Faculty &amp; Department below
+              </p>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  id="profile-avatar-input"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                />
+                <button
+                  id="upload-avatar-btn"
+                  type="button"
+                  class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gold-400/70 bg-gold-50 dark:bg-gold-500/10 text-gold-800 dark:text-gold-300 hover:bg-gold-100 dark:hover:bg-gold-500/20 transition-colors"
+                >
+                  Upload Photo
+                </button>
+                <button
+                  id="remove-avatar-btn"
+                  type="button"
+                  class="hidden px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                >
+                  Remove Photo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="md:text-right shrink-0">
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Goal Standing Analysis</p>
+            <p id="profile-goal-status" class="font-mono text-sm font-semibold text-gold-600 dark:text-gold-400 mt-1">
+              Target 4.50 · No courses yet
+            </p>
+          </div>
+        </div>
+
+        <!-- Demonstration Profile Quick-Loader Card -->
+        <div class="bg-white dark:bg-slate-900 border border-gold-300/80 dark:border-gold-500/30 rounded-xl p-5 sm:p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="font-display text-sm font-bold text-slate-900 dark:text-white">
+                Demonstration Profile Selector
+              </h3>
+              <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                Start from scratch or load a sample University of Nigeria, Nsukka (UNN) student dataset to test analytics right away.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+            <select
+              id="demo-profile-select"
+              aria-label="Select demonstration profile"
+              class="flex-1 px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+            ></select>
+            <div class="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+              <button
+                id="load-demo-profile-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                Load Demo Profile
+              </button>
+              <button
+                id="reset-bare-btn"
+                type="button"
+                class="px-4 py-2.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-600"
+              >
+                Clear All Data
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Feedback Banner -->
+        <div id="profile-feedback" class="hidden px-5 py-3 rounded-xl border text-sm font-medium" role="status" aria-live="polite"></div>
+
+        <!-- Profile Edit Form (UNN Faculties/Departments & Consecutive Year/Level Sync) -->
+        <form id="student-profile-form" novalidate class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 sm:p-7 space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label for="profile-name" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
+              <input
+                id="profile-name"
+                type="text"
+                required
+                maxlength="60"
+                placeholder="e.g. Chinedu Okafor"
+                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              />
+            </div>
+
+            <div>
+              <label for="profile-regno" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Registration Number <span class="font-normal text-slate-500">(Format: YYYY/24#### e.g. 2023/256558)</span>
+              </label>
+              <input
+                id="profile-regno"
+                type="text"
+                required
+                maxlength="11"
+                placeholder="2023/256558"
+                class="w-full px-3.5 py-2.5 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              />
+              <p id="profile-regno-error" class="hidden mt-1 text-xs text-rose-600 dark:text-rose-400">
+                Use 4-digit year followed by slash and 6 digits (e.g. 2023/256558).
+              </p>
+            </div>
+
+            <div>
+              <label for="profile-faculty" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">UNN Faculty</label>
+              <select
+                id="profile-faculty"
+                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              ></select>
+            </div>
+
+            <div>
+              <label for="profile-department" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">UNN Department</label>
+              <select
+                id="profile-department"
+                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              ></select>
+            </div>
+
+            <div>
+              <label for="profile-course" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Course / Programme</label>
+              <input
+                id="profile-course"
+                type="text"
+                required
+                maxlength="80"
+                placeholder="e.g. B.Sc. Computer Science"
+                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              />
+            </div>
+
+            <div>
+              <label for="profile-entry-year" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Entry / Admission Year</label>
+              <select
+                id="profile-entry-year"
+                class="w-full px-3.5 py-2.5 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                <option value="2019">2019</option>
+                <option value="2020">2020</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024" selected>2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="profile-level" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Current Level</label>
+              <select
+                id="profile-level"
+                class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              >
+                <option value="100 Level">100 Level</option>
+                <option value="200 Level">200 Level</option>
+                <option value="300 Level">300 Level</option>
+                <option value="400 Level">400 Level</option>
+                <option value="500 Level">500 Level</option>
+                <option value="600 Level">600 Level</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="profile-session" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Current Academic Session (Synced)</label>
+              <select
+                id="profile-session"
+                class="w-full px-3.5 py-2.5 text-sm font-mono rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              ></select>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label for="profile-target-cgpa" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Target CGPA Goal (0.00 – 5.00)
+              </label>
+              <input
+                id="profile-target-cgpa"
+                type="number"
+                min="0"
+                max="5"
+                step="0.01"
+                class="w-full sm:w-64 px-3.5 py-2.5 text-sm font-mono tabular-nums rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+              />
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+            <button
+              id="save-profile-btn"
+              type="submit"
+              class="px-5 py-2.5 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+            >
+              Save Profile Details
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- Print & Export Preview Modal Dialog -->
+    <dialog
+      id="print-preview-dialog"
+      aria-labelledby="print-dialog-title"
+      class="no-print m-auto w-[min(94vw,900px)] max-h-[90vh] rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 shadow-2xl backdrop:bg-slate-950/60"
+    >
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h3 id="print-dialog-title" class="font-display text-base font-bold text-slate-900 dark:text-white">
+            Transcript Print &amp; Export Preview
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Review the formatted academic statement before printing or exporting.</p>
+        </div>
+        <button
+          id="close-preview-dialog-btn"
+          type="button"
+          aria-label="Close transcript preview"
+          class="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-500"
+        >
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div id="print-preview-sheet" class="p-6 overflow-y-auto max-h-[65vh] bg-white text-slate-900"></div>
+
+      <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-wrap items-center justify-end gap-3">
+        <button
+          id="dialog-export-csv-btn"
+          type="button"
+          class="px-4 py-2 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+        >
+          Download CSV
+        </button>
+        <button
+          id="dialog-print-now-btn"
+          type="button"
+          class="px-4 py-2 rounded-lg text-xs font-semibold bg-gold-400 text-slate-950 hover:bg-gold-300 transition-colors"
+        >
+          Print Statement
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Application Entry Point (ES6+ Vanilla JavaScript) -->
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

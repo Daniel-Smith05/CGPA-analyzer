@@ -1,0 +1,54 @@
+/* Custom portal utilities, tabular figures, and print formatting */
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth focus indicators for keyboard navigation */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Native <dialog> backdrop styling */
+dialog::backdrop {
+  background-color: rgba(2, 6, 23, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+/* Print Stylesheet: print only the academic transcript cleanly */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .lg\:pl-64 {
+    padding-left: 0 !important;
+  }
+
+  #transcript {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  #printable-transcript-area {
+    padding: 0 !important;
+  }
+
+  #transcript * {
+    color: #0f172a !important;
+    background: transparent !important;
+    border-color: #cbd5e1 !important;
+  }
+}

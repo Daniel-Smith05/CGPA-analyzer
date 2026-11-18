@@ -1,0 +1,6 @@
+{
+  "name": "Student Result & CGPA Analytics Portal",
+  "description": "Single-page academic result management, 5.0-scale GPA & CGPA calculator, Chart.js performance analytics, and printable transcript preview portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
