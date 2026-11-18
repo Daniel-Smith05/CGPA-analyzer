@@ -10,6 +10,7 @@ import {
   deriveLevelFromAcademicYear,
   deriveAcademicYearFromLevel,
   validateNewSession,
+  realignSessionsToEntryYear,
   isValidRegNoFormat,
   validateCourse,
   calculatePortalAnalytics,
@@ -1410,8 +1411,15 @@ function bindEvents() {
     try {
       const dataUrl = await resizeAvatarImageFile(file);
       state.profile.avatarDataUrl = dataUrl;
-      renderAll(true);
-      showProfileFeedback('Profile avatar uploaded and saved in browser storage.', 'success');
+      const saved = savePortalState(state);
+      renderAvatarImages();
+      if (!saved) {
+        showProfileFeedback('Avatar could not be saved because browser localStorage quota was exceeded.', 'error');
+      } else {
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        els.lastSavedLabel.textContent = `Saved locally · ${now}`;
+        showProfileFeedback('Profile avatar uploaded and saved in browser storage.', 'success');
+      }
     } catch (err) {
       showProfileFeedback(err instanceof Error ? err.message : 'Unable to process image.', 'error');
     } finally {
@@ -1421,7 +1429,8 @@ function bindEvents() {
 
   els.removeAvatarBtn.addEventListener('click', () => {
     state.profile.avatarDataUrl = '';
-    renderAll(true);
+    savePortalState(state);
+    renderAvatarImages();
     showProfileFeedback('Profile avatar removed.', 'info');
   });
 
@@ -1541,6 +1550,14 @@ function bindEvents() {
       return;
     }
 
+    const rawTarget = Number.parseFloat(els.profileTargetCgpa.value);
+    const targetCgpa = Number.isFinite(rawTarget) ? Math.min(5, Math.max(0, rawTarget)) : 4.5;
+    const entryYearChanged = entryYear !== state.profile.entryYear;
+
+    if (entryYearChanged && state.sessions.length > 0) {
+      state.sessions = realignSessionsToEntryYear(state.sessions, entryYear);
+    }
+
     state.profile = {
       ...state.profile,
       name,
@@ -1551,11 +1568,16 @@ function bindEvents() {
       entryYear,
       level,
       currentSession,
-      targetCgpa: Math.min(5, Math.max(0, Number(els.profileTargetCgpa.value) || 4.5)),
+      targetCgpa,
     };
 
     renderAll(true);
-    showProfileFeedback('Student profile details saved and applied across your portal and UNN course catalog.', 'success');
+    showProfileFeedback(
+      entryYearChanged && state.sessions.length > 0
+        ? 'Student profile saved and existing session years realigned to match your updated Entry Year.'
+        : 'Student profile details saved and applied across your portal and UNN course catalog.',
+      'success'
+    );
   });
 
   // Transcript Print & Export actions

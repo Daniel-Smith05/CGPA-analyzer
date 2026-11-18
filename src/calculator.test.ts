@@ -7,6 +7,7 @@ import {
   deriveLevelFromAcademicYear,
   deriveAcademicYearFromLevel,
   validateNewSession,
+  realignSessionsToEntryYear,
   isValidRegNoFormat,
   validateCourse,
   calculateSemesterMetrics,
@@ -154,4 +155,20 @@ test('getAcademicStanding and formatTranscriptCsv cover all boundaries', () => {
   );
   assert.match(csv, /2023\/256558/);
   assert.match(csv, /COS 101,Intro to CS,2,A,5,10,Pass/);
+});
+
+test('realignSessionsToEntryYear shifts session years consistently and validateCourse handles string/decimal units', () => {
+  const realigned = realignSessionsToEntryYear(
+    [
+      { id: 's1', academicYear: '2024/2025', level: '100 Level', semesterName: 'First Semester', courses: [] },
+      { id: 's2', academicYear: '2025/2026', level: '200 Level', semesterName: 'First Semester', courses: [] },
+    ],
+    '2022'
+  );
+  assert.equal(realigned[0].academicYear, '2022/2023');
+  assert.equal(realigned[1].academicYear, '2023/2024');
+
+  assert.equal(validateCourse({ code: 'cos 101', title: 'Intro', units: '3', grade: 'a' }).valid, true);
+  assert.equal(validateCourse({ code: 'COS 101', title: 'Intro', units: '3.5', grade: 'A' }).valid, false);
+  assert.equal(validateCourse({ code: 'COS 101', title: 'Intro', units: '', grade: 'A' }).valid, false);
 });

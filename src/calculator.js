@@ -167,6 +167,20 @@ export function validateNewSession(existingSessions, candidate, entryYear) {
 }
 
 /**
+ * Realigns existing sessions' academicYear values to remain strictly consistent
+ * with their assigned Level whenever a student updates their Entry Year.
+ * @param {Array} sessions
+ * @param {number|string} entryYear
+ * @returns {Array}
+ */
+export function realignSessionsToEntryYear(sessions, entryYear) {
+  return (Array.isArray(sessions) ? sessions : []).map((session) => {
+    const syncedYear = deriveAcademicYearFromLevel(entryYear, session.level);
+    return syncedYear ? { ...session, academicYear: syncedYear } : session;
+  });
+}
+
+/**
  * Validates student registration number against the year/6-digit pattern (e.g., 2023/256558).
  * @param {string} regNo
  * @returns {boolean}
